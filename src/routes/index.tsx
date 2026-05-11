@@ -1,26 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Navbar } from "@/components/insightiq/Navbar";
+import { Hero } from "@/components/insightiq/Hero";
+import { TrustBar } from "@/components/insightiq/TrustBar";
+import { Features } from "@/components/insightiq/Features";
+import { Pipeline } from "@/components/insightiq/Pipeline";
+import { DemoPlayground } from "@/components/insightiq/DemoPlayground";
+import { HowItWorks } from "@/components/insightiq/HowItWorks";
+import { Testimonials } from "@/components/insightiq/Testimonials";
+import { FinalCTA } from "@/components/insightiq/FinalCTA";
+import { Footer } from "@/components/insightiq/Footer";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
-
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <main className="relative min-h-screen bg-background text-foreground">
+      <Navbar />
+      <Hero />
+      <TrustBar />
+      <Features />
+      <Pipeline />
+      <DemoPlayground />
+      <HowItWorks />
+      <Testimonials />
+      <FinalCTA />
+      <Footer />
+    </main>
+  );
 }
