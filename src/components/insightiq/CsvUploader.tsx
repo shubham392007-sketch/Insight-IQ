@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileSpreadsheet, Play, X, CheckCircle2, Hash, Calendar, Type, ToggleLeft, Sparkles } from "lucide-react";
+import { Upload, FileSpreadsheet, Play, X, CheckCircle2, Hash, Calendar, Type, ToggleLeft, Sparkles, Link2, ClipboardPaste, Loader2 } from "lucide-react";
+import { GeneratedDashboard } from "./GeneratedDashboard";
 
 const placeholders = [
   "Upload sales.csv",
@@ -11,7 +12,7 @@ const placeholders = [
 
 type ColType = "number" | "date" | "category" | "boolean" | "id" | "text";
 type Column = { name: string; type: ColType; unique: number; samples: string[]; nullPct: number };
-type Parsed = { fileName: string; rows: number; cols: Column[]; preview: string[][] };
+type Parsed = { fileName: string; rows: number; cols: Column[]; preview: string[][]; allRows: string[][] };
 
 const TYPE_META: Record<ColType, { icon: any; label: string; color: string }> = {
   number:   { icon: Hash,       label: "number",   color: "text-[var(--primary)]" },
@@ -64,7 +65,7 @@ function inferType(name: string, values: string[]): ColType {
 }
 function parseCsv(text: string, fileName: string): Parsed {
   const lines = text.split(/\r?\n/).filter((l) => l.length);
-  if (!lines.length) return { fileName, rows: 0, cols: [], preview: [] };
+  if (!lines.length) return { fileName, rows: 0, cols: [], preview: [], allRows: [] };
   const d = detectDelimiter(lines[0]);
   const header = parseLine(lines[0], d).map((h) => h.trim() || "column");
   const rows = lines.slice(1).map((l) => parseLine(l, d));
@@ -80,7 +81,7 @@ function parseCsv(text: string, fileName: string): Parsed {
       nullPct: Math.round(((colVals.length - non.length) / Math.max(1, colVals.length)) * 100),
     };
   });
-  return { fileName, rows: rows.length, cols, preview: rows.slice(0, 4) };
+  return { fileName, rows: rows.length, cols, preview: rows.slice(0, 4), allRows: rows };
 }
 
 // --- Demo dataset for "Try sample" ---
@@ -99,6 +100,11 @@ export function CsvUploader() {
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [parsed, setParsed] = useState<Parsed | null>(null);
+  const [mode, setMode] = useState<"file" | "paste" | "url">("file");
+  const [pasteText, setPasteText] = useState("");
+  const [urlText, setUrlText] = useState("");
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [showDashboard, setShowDashboard] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -109,6 +115,7 @@ export function CsvUploader() {
 
   const handleText = useCallback((text: string, name: string) => {
     setBusy(true);
+    setShowDashboard(false);
     // brief delay to convey "analysis"
     setTimeout(() => {
       setParsed(parseCsv(text, name));
@@ -121,6 +128,24 @@ export function CsvUploader() {
     reader.onload = () => handleText(String(reader.result || ""), file.name);
     reader.readAsText(file);
   }, [handleText]);
+
+  const handleUrl = useCallback(async () => {
+    setUrlError(null);
+    if (!urlText.trim()) { setUrlError("Enter a CSV URL"); return; }
+    setBusy(true);
+    setShowDashboard(false);
+    try {
+      const res = await fetch(urlText.trim());
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const text = await res.text();
+      const name = urlText.split("/").pop()?.split("?")[0] || "remote.csv";
+      setParsed(parseCsv(text, name));
+    } catch (e: any) {
+      setUrlError(e?.message || "Could not fetch CSV (check CORS)");
+    } finally {
+      setBusy(false);
+    }
+  }, [urlText]);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -136,6 +161,30 @@ export function CsvUploader() {
       transition={{ delay: 0.2, duration: 0.6 }}
       className="mt-10 w-full max-w-2xl"
     >
+      {/* Source tabs */}
+      <div className="mb-3 inline-flex rounded-full border border-border bg-card p-1 text-xs">
+        {([
+          { id: "file", label: "Upload", icon: Upload },
+          { id: "paste", label: "Paste", icon: ClipboardPaste },
+          { id: "url", label: "URL", icon: Link2 },
+        ] as const).map((t) => {
+          const Icon = t.icon;
+          const active = mode === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => { setMode(t.id); setParsed(null); setShowDashboard(false); }}
+              className={`relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition ${
+                active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-3 w-3" /> {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {mode === "file" && (
       <div
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
         onDragLeave={() => setDrag(false)}
@@ -164,7 +213,7 @@ export function CsvUploader() {
           </div>
           {parsed && (
             <button
-              onClick={() => setParsed(null)}
+              onClick={() => { setParsed(null); setShowDashboard(false); }}
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
               aria-label="Reset"
             >
@@ -209,6 +258,62 @@ export function CsvUploader() {
           )}
         </AnimatePresence>
       </div>
+      )}
+
+      {mode === "paste" && (
+        <div className="rounded-2xl border border-border bg-card p-3 shadow-elegant">
+          <textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            placeholder={`Paste CSV here, e.g.\nname,revenue,region\nAcme,1200,NA\nGlobex,980,EU`}
+            className="h-36 w-full resize-none rounded-xl bg-secondary/60 p-3 font-mono text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+          />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-foreground">{pasteText.split(/\r?\n/).filter(Boolean).length} lines</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setPasteText(SAMPLE); }}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Load sample
+              </button>
+              <button
+                onClick={() => pasteText.trim() && handleText(pasteText, "pasted.csv")}
+                disabled={busy || !pasteText.trim()}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-2 text-xs font-medium text-background hover:opacity-90 disabled:opacity-60"
+              >
+                {busy ? <><Loader2 className="h-3 w-3 animate-spin" /> Analyzing…</> : "Detect schema"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mode === "url" && (
+        <div className="rounded-2xl border border-border bg-card p-2 shadow-elegant">
+          <div className="flex items-center gap-2 rounded-xl bg-secondary/60 px-4 py-3">
+            <Link2 className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <input
+              value={urlText}
+              onChange={(e) => setUrlText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleUrl()}
+              placeholder="https://example.com/data.csv"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+            <button
+              onClick={handleUrl}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-60"
+            >
+              {busy ? <><Loader2 className="h-3 w-3 animate-spin" /> Fetching…</> : "Fetch & analyze"}
+            </button>
+          </div>
+          {urlError && <div className="px-4 pt-2 text-[11px] text-rose-500">{urlError}</div>}
+          <div className="px-4 pt-2 pb-1 text-[10px] text-muted-foreground">
+            Tip: the URL must allow CORS. Try a raw GitHub or public dataset link.
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
         <button className="inline-flex items-center gap-1.5 hover:text-foreground">
@@ -304,14 +409,21 @@ export function CsvUploader() {
                 <div className="text-[11px] text-muted-foreground">
                   Recommended: {parsed.cols.some((c) => c.type === "date") ? "Time-series area chart" : "Distribution + correlation"} · {parsed.cols.filter((c) => c.type === "category").length} segment{parsed.cols.filter((c) => c.type === "category").length === 1 ? "" : "s"}
                 </div>
-                <button className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background hover:opacity-90">
-                  Generate dashboard <Sparkles className="h-3 w-3" />
+                <button
+                  onClick={() => setShowDashboard((s) => !s)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background hover:opacity-90"
+                >
+                  {showDashboard ? "Hide dashboard" : "Generate dashboard"} <Sparkles className="h-3 w-3" />
                 </button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {parsed && showDashboard && (
+        <GeneratedDashboard parsed={parsed} allRows={parsed.allRows} />
+      )}
     </motion.div>
   );
 }
