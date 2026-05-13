@@ -622,7 +622,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
     await new Promise((r) => setTimeout(r, 600));
     try {
       const node = ref.current;
-      const canvas = await html2canvas(node, { background: "#ffffff", scale: 1.5 });
+      const canvas = await html2canvas(node, { backgroundColor: "#ffffff", scale: 1.5 });
       const img = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
       const pw = pdf.internal.pageSize.getWidth();
