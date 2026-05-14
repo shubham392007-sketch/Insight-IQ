@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Logo } from "./Logo";
-import { ArrowRight } from "lucide-react";
 
 const links = ["Product", "Features", "Solutions", "Pricing", "Docs"];
 
@@ -39,16 +38,7 @@ export function Navbar() {
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <a href="#login" className="hidden text-sm text-muted-foreground hover:text-foreground sm:block">Login</a>
-          <a
-            href="#start"
-            className="group inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-all hover:opacity-90"
-          >
-            Get Started
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-          </a>
-        </div>
+        <div className="w-8" aria-hidden />
       </div>
     </motion.header>
   );
