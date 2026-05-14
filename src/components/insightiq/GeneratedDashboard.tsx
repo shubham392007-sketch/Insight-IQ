@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -68,6 +68,8 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
   const [exporting, setExporting] = useState(false);
   const [exportMode, setExportMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const insightsRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const PAGE_SIZE = 8;
 
   const charts = useMemo<ChartSpec[]>(() => {
