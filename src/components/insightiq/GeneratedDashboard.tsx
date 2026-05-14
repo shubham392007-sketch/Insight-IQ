@@ -618,61 +618,152 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
   }, [parsed]);
 
   async function handleExport() {
-    if (!ref.current) return;
     setExporting(true);
     setExportMode(true);
-    await new Promise((r) => setTimeout(r, 800));
+    // wait for full render of all charts
+    await new Promise((r) => setTimeout(r, 900));
     try {
-      const node = ref.current;
-      const canvas = await html2canvas(node, {
-        backgroundColor: "#ffffff",
-        scale: Math.min(3, Math.max(2, window.devicePixelRatio * 2)),
-        useCORS: true,
-        logging: false,
-        windowWidth: node.scrollWidth,
-      });
       const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4", compress: true });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 24;
+      const margin = 36;
       const innerW = pageW - margin * 2;
-      const ratio = canvas.width / innerW;
-      const innerImgH = canvas.height / ratio;
-      const innerPageH = pageH - margin * 2;
+      const headerH = 22; // chart title line height in PDF
+      const gap = 14;
 
-      if (innerImgH <= innerPageH) {
-        const img = canvas.toDataURL("image/png");
-        pdf.addImage(img, "PNG", margin, margin, innerW, innerImgH, undefined, "FAST");
-      } else {
-        const pageCanvas = document.createElement("canvas");
-        const ctx = pageCanvas.getContext("2d")!;
-        const sliceH = Math.floor(innerPageH * ratio);
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = sliceH;
-        let sy = 0;
-        let pageIdx = 0;
-        while (sy < canvas.height) {
-          const h = Math.min(sliceH, canvas.height - sy);
-          pageCanvas.height = h;
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, pageCanvas.width, h);
-          ctx.drawImage(canvas, 0, sy, canvas.width, h, 0, 0, canvas.width, h);
-          const slice = pageCanvas.toDataURL("image/png");
-          if (pageIdx > 0) pdf.addPage();
-          pdf.addImage(slice, "PNG", margin, margin, innerW, h / ratio, undefined, "FAST");
-          sy += h;
-          pageIdx++;
+      // ---------- COVER ----------
+      pdf.setFillColor(15, 23, 42);
+      pdf.rect(0, 0, pageW, 160, "F");
+      pdf.setTextColor(255);
+      pdf.setFontSize(11);
+      pdf.text("InsightIQ · Auto-generated report", margin, 60);
+      pdf.setFontSize(26);
+      pdf.text(parsed.fileName, margin, 100);
+      pdf.setFontSize(11);
+      pdf.setTextColor(200);
+      pdf.text(
+        `${parsed.rows.toLocaleString()} rows  ·  ${parsed.cols.length} columns  ·  ${charts.length} visualizations`,
+        margin,
+        125,
+      );
+      pdf.setTextColor(120);
+      pdf.setFontSize(10);
+      pdf.text(new Date().toLocaleString(), margin, 148);
+
+      // Insights summary on cover
+      pdf.setTextColor(20);
+      pdf.setFontSize(13);
+      pdf.text("Summary", margin, 200);
+      pdf.setFontSize(11);
+      pdf.setTextColor(60);
+      let sy = 224;
+      insights.forEach((line) => {
+        const wrapped = pdf.splitTextToSize(`• ${line}`, innerW);
+        pdf.text(wrapped, margin, sy);
+        sy += wrapped.length * 14 + 4;
+      });
+
+      // ---------- TOC (placeholder, page numbers patched after layout) ----------
+      pdf.addPage();
+      pdf.setTextColor(20);
+      pdf.setFontSize(18);
+      pdf.text("Table of contents", margin, margin + 18);
+      const tocStartY = margin + 50;
+      const tocLineH = 18;
+      const tocPageNum = pdf.getNumberOfPages();
+      const tocEntries: { title: string; group: string; page: number }[] = [];
+
+      // ---------- CHARTS ----------
+      const cards = visible
+        .map((c) => ({ spec: c, el: cardRefs.current[c.id] }))
+        .filter((x): x is { spec: ChartSpec; el: HTMLDivElement } => !!x.el);
+
+      pdf.addPage();
+      let cursorY = margin;
+
+      for (const { spec, el } of cards) {
+        const canvas = await html2canvas(el, {
+          backgroundColor: "#ffffff",
+          scale: Math.min(2.5, Math.max(2, window.devicePixelRatio * 1.5)),
+          useCORS: true,
+          logging: false,
+          windowWidth: el.scrollWidth,
+        });
+        const ratio = canvas.width / innerW;
+        let imgH = canvas.height / ratio;
+        const blockH = headerH + imgH + gap;
+        const maxBlock = pageH - margin * 2;
+
+        // If the block is taller than a single page, scale it down to fit one page.
+        let drawImgH = imgH;
+        let drawImgW = innerW;
+        if (blockH > maxBlock) {
+          const scale = (maxBlock - headerH - gap) / imgH;
+          drawImgH = imgH * scale;
+          drawImgW = innerW * scale;
         }
+        const finalBlockH = headerH + drawImgH + gap;
+
+        // Page-break if not enough room for this chart
+        if (cursorY + finalBlockH > pageH - margin) {
+          pdf.addPage();
+          cursorY = margin;
+        }
+
+        tocEntries.push({
+          title: spec.title,
+          group: spec.group,
+          page: pdf.getNumberOfPages(),
+        });
+
+        // Title bar
+        pdf.setTextColor(20);
+        pdf.setFontSize(12);
+        pdf.text(spec.title, margin, cursorY + 14);
+        pdf.setFontSize(9);
+        pdf.setTextColor(120);
+        pdf.text(spec.badge, pageW - margin, cursorY + 14, { align: "right" });
+
+        // Image
+        const img = canvas.toDataURL("image/jpeg", 0.92);
+        pdf.addImage(
+          img,
+          "JPEG",
+          margin + (innerW - drawImgW) / 2,
+          cursorY + headerH,
+          drawImgW,
+          drawImgH,
+          undefined,
+          "FAST",
+        );
+
+        cursorY += finalBlockH;
       }
 
-      // Footer
+      // ---------- Patch TOC ----------
+      pdf.setPage(tocPageNum);
+      pdf.setTextColor(40);
+      pdf.setFontSize(11);
+      tocEntries.forEach((e, i) => {
+        const y = tocStartY + i * tocLineH;
+        if (y > pageH - margin - 20) return; // overflow guard for huge reports
+        pdf.setTextColor(40);
+        pdf.text(`${i + 1}. ${e.title}`, margin, y);
+        pdf.setTextColor(140);
+        pdf.text(e.group, pageW - margin - 60, y, { align: "right" });
+        pdf.text(String(e.page), pageW - margin, y, { align: "right" });
+      });
+
+      // ---------- Footer on every page ----------
       const total = pdf.getNumberOfPages();
       for (let i = 1; i <= total; i++) {
         pdf.setPage(i);
         pdf.setFontSize(8);
         pdf.setTextColor(140);
-        pdf.text(`InsightIQ · ${parsed.fileName} · page ${i} / ${total}`, margin, pageH - 10);
+        pdf.text(`InsightIQ · ${parsed.fileName}`, margin, pageH - 14);
+        pdf.text(`page ${i} / ${total}`, pageW - margin, pageH - 14, { align: "right" });
       }
+
       pdf.save(`${parsed.fileName.replace(/\.[^.]+$/, "")}-insights.pdf`);
     } finally {
       setExportMode(false);
