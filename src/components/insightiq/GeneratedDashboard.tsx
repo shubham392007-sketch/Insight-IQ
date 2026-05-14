@@ -68,7 +68,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
   const [exporting, setExporting] = useState(false);
   const [exportMode, setExportMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const PAGE_SIZE = 9;
+  const PAGE_SIZE = 8;
 
   const charts = useMemo<ChartSpec[]>(() => {
     const cols = parsed.cols;
@@ -619,38 +619,57 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
     if (!ref.current) return;
     setExporting(true);
     setExportMode(true);
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 800));
     try {
       const node = ref.current;
-      const canvas = await html2canvas(node, { backgroundColor: "#ffffff", scale: 1.5 });
-      const img = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
-      const pw = pdf.internal.pageSize.getWidth();
-      const ph = pdf.internal.pageSize.getHeight();
-      const ratio = canvas.width / pw;
-      const imgH = canvas.height / ratio;
-      let y = 0;
-      if (imgH <= ph) {
-        pdf.addImage(img, "PNG", 0, 0, pw, imgH);
+      const canvas = await html2canvas(node, {
+        backgroundColor: "#ffffff",
+        scale: Math.min(3, Math.max(2, window.devicePixelRatio * 2)),
+        useCORS: true,
+        logging: false,
+        windowWidth: node.scrollWidth,
+      });
+      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4", compress: true });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 24;
+      const innerW = pageW - margin * 2;
+      const ratio = canvas.width / innerW;
+      const innerImgH = canvas.height / ratio;
+      const innerPageH = pageH - margin * 2;
+
+      if (innerImgH <= innerPageH) {
+        const img = canvas.toDataURL("image/png");
+        pdf.addImage(img, "PNG", margin, margin, innerW, innerImgH, undefined, "FAST");
       } else {
-        // multi-page slicing
         const pageCanvas = document.createElement("canvas");
         const ctx = pageCanvas.getContext("2d")!;
-        const sliceH = Math.floor(ph * ratio);
+        const sliceH = Math.floor(innerPageH * ratio);
         pageCanvas.width = canvas.width;
         pageCanvas.height = sliceH;
         let sy = 0;
+        let pageIdx = 0;
         while (sy < canvas.height) {
           const h = Math.min(sliceH, canvas.height - sy);
           pageCanvas.height = h;
-          ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, pageCanvas.width, h);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, pageCanvas.width, h);
           ctx.drawImage(canvas, 0, sy, canvas.width, h, 0, 0, canvas.width, h);
           const slice = pageCanvas.toDataURL("image/png");
-          if (sy > 0) pdf.addPage();
-          pdf.addImage(slice, "PNG", 0, 0, pw, (h / ratio));
+          if (pageIdx > 0) pdf.addPage();
+          pdf.addImage(slice, "PNG", margin, margin, innerW, h / ratio, undefined, "FAST");
           sy += h;
-          y++;
+          pageIdx++;
         }
+      }
+
+      // Footer
+      const total = pdf.getNumberOfPages();
+      for (let i = 1; i <= total; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(140);
+        pdf.text(`InsightIQ · ${parsed.fileName} · page ${i} / ${total}`, margin, pageH - 10);
       }
       pdf.save(`${parsed.fileName.replace(/\.[^.]+$/, "")}-insights.pdf`);
     } finally {
@@ -721,23 +740,24 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
           })}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           {pageItems.map((c, i) => {
-            const h = c.id === "ov-kpi" ? 220 : 320;
+            const isWide = c.span === 2;
+            const h = c.id === "ov-kpi" ? 260 : isWide ? 460 : 420;
             return (
               <motion.div
                 key={c.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i, 8) * 0.03 }}
-                className={`rounded-xl border border-border bg-background p-4 ${c.span === 2 ? "md:col-span-2" : ""}`}
+                className={`rounded-2xl border border-border bg-background p-5 ${isWide ? "xl:col-span-2" : ""}`}
               >
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2 text-base font-medium">
                     <span className="text-[var(--primary)]">{c.icon}</span>
                     <span className="truncate">{c.title}</span>
                   </div>
-                  <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{c.badge}</span>
+                  <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">{c.badge}</span>
                 </div>
                 {c.render(h)}
               </motion.div>
