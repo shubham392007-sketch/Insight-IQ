@@ -132,7 +132,6 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
   const [exporting, setExporting] = useState(false);
   const [exportMode, setExportMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const insightsRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const PAGE_SIZE = 8;
 
