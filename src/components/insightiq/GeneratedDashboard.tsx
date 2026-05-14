@@ -897,29 +897,17 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
           })}
         </div>
 
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          {pageItems.map((c, i) => {
-            const isWide = c.span === 2;
-            const h = c.id === "ov-kpi" ? 260 : isWide ? 460 : 420;
-            return (
-              <motion.div
-                key={c.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i, 8) * 0.03 }}
-                className={`rounded-2xl border border-border bg-background p-5 ${isWide ? "xl:col-span-2" : ""}`}
-              >
-                <div className="mb-4 flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2 text-base font-medium">
-                    <span className="text-[var(--primary)]">{c.icon}</span>
-                    <span className="truncate">{c.title}</span>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">{c.badge}</span>
-                </div>
-                {c.render(h)}
-              </motion.div>
-            );
-          })}
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+          {pageItems.map((c, i) => (
+            <ResponsiveChartCard
+              key={c.id}
+              spec={c}
+              index={i}
+              innerRef={(el) => {
+                cardRefs.current[c.id] = el;
+              }}
+            />
+          ))}
         </div>
 
         {/* Pagination */}
