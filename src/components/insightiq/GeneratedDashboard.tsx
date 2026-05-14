@@ -59,6 +59,70 @@ type ChartSpec = {
   group: Group; span?: 1 | 2; render: (h: number) => React.ReactNode;
 };
 
+/**
+ * Card that observes its own width and renders the chart at a height that is
+ * always proportional to the available container width. Guarantees charts
+ * fit their card on every breakpoint and labels stay readable on mobile.
+ */
+function ResponsiveChartCard({
+  spec,
+  innerRef,
+  index,
+}: {
+  spec: ChartSpec;
+  innerRef: (el: HTMLDivElement | null) => void;
+  index: number;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    if (!wrapRef.current) return;
+    const el = wrapRef.current;
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) setWidth(e.contentRect.width);
+    });
+    ro.observe(el);
+    setWidth(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
+
+  const isWide = spec.span === 2;
+  // Aspect-ratio driven height — readable on phones, generous on desktop
+  let h: number;
+  if (spec.id === "ov-kpi") {
+    h = width < 480 ? 220 : 260;
+  } else if (isWide) {
+    h = Math.round(Math.min(520, Math.max(300, width * 0.4)));
+  } else {
+    h = Math.round(Math.min(460, Math.max(280, width * 0.62)));
+  }
+
+  return (
+    <motion.div
+      ref={(node) => {
+        wrapRef.current = node;
+        innerRef(node);
+      }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index, 8) * 0.03 }}
+      className={`rounded-2xl border border-border bg-background p-4 sm:p-5 ${isWide ? "xl:col-span-2" : ""}`}
+    >
+      <div className="mb-3 flex items-center justify-between gap-2 sm:mb-4">
+        <div className="flex min-w-0 items-center gap-2 text-sm font-medium sm:text-base">
+          <span className="text-[var(--primary)]">{spec.icon}</span>
+          <span className="truncate">{spec.title}</span>
+        </div>
+        <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:px-2.5 sm:py-1">
+          {spec.badge}
+        </span>
+      </div>
+      <div className="w-full">{width > 0 ? spec.render(h) : <div style={{ height: h }} />}</div>
+    </motion.div>
+  );
+}
+
 const NUMERIC_TYPES = ["histogram", "cumulative", "stats", "sparkline", "density"] as const;
 const CATEGORICAL_TYPES = ["bar", "donut", "treemap", "radial", "funnel", "aggregate"] as const;
 
