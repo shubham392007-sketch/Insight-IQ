@@ -56,7 +56,7 @@ function pearson(xs: number[], ys: number[]) {
 type Group = "Overview" | "Numeric" | "Categorical" | "Time" | "Relationships";
 type ChartSpec = {
   id: string; title: string; badge: string; icon: React.ReactNode;
-  group: Group; span?: 1 | 2; render: (h: number) => React.ReactNode;
+  group: Group; span?: 1 | 2; render: (h: number, fs: number) => React.ReactNode;
 };
 
 /**
@@ -98,6 +98,10 @@ function ResponsiveChartCard({
     h = Math.round(Math.min(460, Math.max(280, width * 0.62)));
   }
 
+  // Automatic font scaling — keeps axis labels and legends readable across
+  // every card width without overflowing on small screens.
+  const fs = Math.round(Math.max(9, Math.min(14, width / 48)));
+
   return (
     <motion.div
       ref={(node) => {
@@ -118,7 +122,7 @@ function ResponsiveChartCard({
           {spec.badge}
         </span>
       </div>
-      <div className="w-full">{width > 0 ? spec.render(h) : <div style={{ height: h }} />}</div>
+      <div className="w-full">{width > 0 ? spec.render(h, fs) : <div style={{ height: h }} />}</div>
     </motion.div>
   );
 }
