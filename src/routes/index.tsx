@@ -8,6 +8,7 @@ import { DemoPlayground } from "@/components/insightiq/DemoPlayground";
 import { HowItWorks } from "@/components/insightiq/HowItWorks";
 import { Testimonials } from "@/components/insightiq/Testimonials";
 import { FinalCTA } from "@/components/insightiq/FinalCTA";
+import { DeveloperContact } from "@/components/insightiq/DeveloperContact";
 import { Footer } from "@/components/insightiq/Footer";
 
 export const Route = createFileRoute("/")({
@@ -26,6 +27,7 @@ function Index() {
       <HowItWorks />
       <Testimonials />
       <FinalCTA />
+      <DeveloperContact />
       <Footer />
     </main>
   );

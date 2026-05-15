@@ -6,7 +6,7 @@ const data = Array.from({ length: 20 }, (_, i) => ({ v: 30 + Math.sin(i / 2) * 1
 
 export function DemoPlayground() {
   return (
-    <section className="py-28">
+    <section id="docs" className="py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs text-muted-foreground">

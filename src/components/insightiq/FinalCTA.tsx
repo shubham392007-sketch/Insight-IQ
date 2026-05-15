@@ -14,15 +14,21 @@ export function FinalCTA() {
           InsightIQ helps you discover them instantly.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <a href="#" className="group inline-flex items-center gap-1.5 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition hover:opacity-90">
-            Start free
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              document.querySelector('input[type="file"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="group inline-flex items-center gap-1.5 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition hover:opacity-90"
+          >
+            Upload your CSV
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </a>
-          <a href="#" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition hover:bg-secondary">
-            Schedule a demo
-          </a>
         </div>
-        <div className="mt-6 text-xs text-muted-foreground">No credit card · 14-day Pro trial · SOC 2 Type II</div>
+        <div className="mt-6 text-xs text-muted-foreground">
+          100% client-side · no signup · your data never leaves the browser
+        </div>
       </div>
     </section>
   );

@@ -56,7 +56,7 @@ function pearson(xs: number[], ys: number[]) {
 type Group = "Overview" | "Numeric" | "Categorical" | "Time" | "Relationships";
 type ChartSpec = {
   id: string; title: string; badge: string; icon: React.ReactNode;
-  group: Group; span?: 1 | 2; render: (h: number) => React.ReactNode;
+  group: Group; span?: 1 | 2; render: (h: number, fs: number) => React.ReactNode;
 };
 
 /**
@@ -98,6 +98,10 @@ function ResponsiveChartCard({
     h = Math.round(Math.min(460, Math.max(280, width * 0.62)));
   }
 
+  // Automatic font scaling — keeps axis labels and legends readable across
+  // every card width without overflowing on small screens.
+  const fs = Math.round(Math.max(9, Math.min(14, width / 48)));
+
   return (
     <motion.div
       ref={(node) => {
@@ -118,7 +122,7 @@ function ResponsiveChartCard({
           {spec.badge}
         </span>
       </div>
-      <div className="w-full">{width > 0 ? spec.render(h) : <div style={{ height: h }} />}</div>
+      <div className="w-full">{width > 0 ? spec.render(h, fs) : <div style={{ height: h }} />}</div>
     </motion.div>
   );
 }
@@ -131,6 +135,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
   const [page, setPage] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [exportMode, setExportMode] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"jpeg-standard" | "jpeg-high" | "png">("jpeg-high");
   const ref = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const PAGE_SIZE = 8;
@@ -155,7 +160,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
     if (numericCols.length) out.push({
       id: "ov-kpi", title: "Key metrics", badge: "KPI", icon: <Sigma className="h-3.5 w-3.5" />,
       group: "Overview", span: 2,
-      render: (h) => (
+      render: (h, fs) => (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" style={{ minHeight: h }}>
           {numericCols.slice(0, 8).map((c, i) => {
             const v = numVecs[c.name];
@@ -176,7 +181,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
     out.push({
       id: "ov-types", title: "Column type distribution", badge: "Schema",
       icon: <Layers className="h-3.5 w-3.5" />, group: "Overview",
-      render: (h) => {
+      render: (h, fs) => {
         const counts: Record<string, number> = {};
         cols.forEach((c) => (counts[c.type] = (counts[c.type] || 0) + 1));
         const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
@@ -196,14 +201,14 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
     out.push({
       id: "ov-null", title: "Data completeness per column", badge: "Quality",
       icon: <Percent className="h-3.5 w-3.5" />, group: "Overview",
-      render: (h) => {
+      render: (h, fs) => {
         const data = cols.map((c) => ({ name: c.name, complete: 100 - c.nullPct }));
         return (
           <ResponsiveContainer width="100%" height={h}>
             <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-              <XAxis type="number" domain={[0, 100]} tick={axisTick} />
-              <YAxis type="category" dataKey="name" width={90} tick={{ ...axisTick, fontSize: 10 }} />
+              <XAxis type="number" domain={[0, 100]} tick={{ ...axisTick, fontSize: fs }} />
+              <YAxis type="category" dataKey="name" width={90} tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} />
               <Tooltip contentStyle={tooltipStyle} />
               <Bar dataKey="complete" fill="#10b981" radius={[0, 4, 4, 0]} />
             </BarChart>
@@ -215,14 +220,14 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
     out.push({
       id: "ov-card", title: "Unique values per column", badge: "Cardinality",
       icon: <Boxes className="h-3.5 w-3.5" />, group: "Overview",
-      render: (h) => {
+      render: (h, fs) => {
         const data = cols.map((c) => ({ name: c.name, unique: c.unique }));
         return (
           <ResponsiveContainer width="100%" height={h}>
             <BarChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-              <XAxis dataKey="name" tick={{ ...axisTick, fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
-              <YAxis tick={axisTick} />
+              <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
+              <YAxis tick={{ ...axisTick, fontSize: fs }} />
               <Tooltip contentStyle={tooltipStyle} />
               <Bar dataKey="unique" radius={[4, 4, 0, 0]}>
                 {cols.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
@@ -247,7 +252,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `num-${c.name}`, title: `${c.name} — distribution`, badge: "Histogram",
           icon: <BarChart2 className="h-3.5 w-3.5" />, group: "Numeric",
-          render: (h) => {
+          render: (h, fs) => {
             const bins = 12, step = (max - min) / bins || 1;
             const data = Array.from({ length: bins }, (_, i) => ({ range: fmt(min + i * step), count: 0 }));
             v.forEach((val) => { const b = Math.min(bins - 1, Math.floor((val - min) / step)); data[b].count++; });
@@ -255,8 +260,8 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
               <ResponsiveContainer width="100%" height={h}>
                 <BarChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="range" tick={{ ...axisTick, fontSize: 10 }} />
-                  <YAxis tick={axisTick} />
+                  <XAxis dataKey="range" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} />
+                  <YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="count" fill={color} radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -268,7 +273,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `num-${c.name}`, title: `${c.name} — running total`, badge: "Cumulative",
           icon: <TrendingUp className="h-3.5 w-3.5" />, group: "Numeric",
-          render: (h) => {
+          render: (h, fs) => {
             let acc = 0;
             const data = v.slice(0, 300).map((val, i) => ({ i, cum: (acc += val) }));
             return (
@@ -278,7 +283,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                     <stop offset="0%" stopColor={color} stopOpacity={0.5} /><stop offset="100%" stopColor={color} stopOpacity={0} />
                   </linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="i" tick={axisTick} /><YAxis tick={axisTick} />
+                  <XAxis dataKey="i" tick={{ ...axisTick, fontSize: fs }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Area type="monotone" dataKey="cum" stroke={color} strokeWidth={2} fill={`url(#g-${c.name})`} />
                 </AreaChart>
@@ -290,7 +295,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `num-${c.name}`, title: `${c.name} — five-number summary`, badge: "Statistics",
           icon: <Sigma className="h-3.5 w-3.5" />, group: "Numeric",
-          render: (h) => (
+          render: (h, fs) => (
             <div className="grid grid-cols-3 gap-3" style={{ minHeight: h }}>
               {[{ l: "min", v: min }, { l: "q1", v: quantile(sorted, 0.25) }, { l: "median", v: quantile(sorted, 0.5) },
                 { l: "mean", v: mean }, { l: "q3", v: quantile(sorted, 0.75) }, { l: "max", v: max }].map((s) => (
@@ -306,13 +311,13 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `num-${c.name}`, title: `${c.name} — sequence`, badge: "Line",
           icon: <Activity className="h-3.5 w-3.5" />, group: "Numeric",
-          render: (h) => {
+          render: (h, fs) => {
             const data = v.slice(0, 300).map((val, i) => ({ i, v: val }));
             return (
               <ResponsiveContainer width="100%" height={h}>
                 <LineChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="i" tick={axisTick} /><YAxis tick={axisTick} />
+                  <XAxis dataKey="i" tick={{ ...axisTick, fontSize: fs }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2} dot={false} />
                 </LineChart>
@@ -324,7 +329,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `num-${c.name}`, title: `${c.name} — density`, badge: "Area density",
           icon: <BarChart2 className="h-3.5 w-3.5" />, group: "Numeric",
-          render: (h) => {
+          render: (h, fs) => {
             const bins = 24, step = (max - min) / bins || 1;
             const data = Array.from({ length: bins }, (_, i) => ({ x: fmt(min + i * step), d: 0 }));
             v.forEach((val) => { const b = Math.min(bins - 1, Math.floor((val - min) / step)); data[b].d++; });
@@ -335,7 +340,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                     <stop offset="0%" stopColor={color} stopOpacity={0.55} /><stop offset="100%" stopColor={color} stopOpacity={0.05} />
                   </linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="x" tick={{ ...axisTick, fontSize: 9 }} /><YAxis tick={axisTick} />
+                  <XAxis dataKey="x" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Area type="basis" dataKey="d" stroke={color} strokeWidth={2} fill={`url(#d-${c.name})`} />
                 </AreaChart>
@@ -360,12 +365,12 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `cat-${c.name}`, title: `${c.name} — counts`, badge: "Bar",
           icon: <BarChart3 className="h-3.5 w-3.5" />, group: "Categorical",
-          render: (h) => (
+          render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               <BarChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="name" tick={{ ...axisTick, fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
-                <YAxis tick={axisTick} />
+                <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
+                <YAxis tick={{ ...axisTick, fontSize: fs }} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                   {data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
@@ -378,7 +383,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `cat-${c.name}`, title: `${c.name} — share`, badge: "Donut",
           icon: <PieIcon className="h-3.5 w-3.5" />, group: "Categorical",
-          render: (h) => (
+          render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               <PieChart>
                 <Pie data={data} dataKey="value" nameKey="name" innerRadius="45%" outerRadius="80%" paddingAngle={2} label>
@@ -393,7 +398,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `cat-${c.name}`, title: `${c.name} — treemap`, badge: "Treemap",
           icon: <Grid3x3 className="h-3.5 w-3.5" />, group: "Categorical",
-          render: (h) => (
+          render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               <Treemap data={data.map((d, i) => ({ ...d, fill: PALETTE[i % PALETTE.length] }))}
                 dataKey="value" nameKey="name" stroke="#fff" />
@@ -404,7 +409,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `cat-${c.name}`, title: `${c.name} — radial`, badge: "Radial",
           icon: <Target className="h-3.5 w-3.5" />, group: "Categorical",
-          render: (h) => (
+          render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               <RadialBarChart innerRadius="20%" outerRadius="100%"
                 data={data.slice(0, 6).map((d, i) => ({ ...d, fill: PALETTE[i % PALETTE.length] }))}>
@@ -418,7 +423,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         out.push({
           id: `cat-${c.name}`, title: `${c.name} — funnel`, badge: "Funnel",
           icon: <Activity className="h-3.5 w-3.5" />, group: "Categorical",
-          render: (h) => (
+          render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               <FunnelChart>
                 <Tooltip contentStyle={tooltipStyle} />
@@ -445,12 +450,12 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
           out.push({
             id: `cat-${c.name}`, title: `Avg ${numericCols[0].name} by ${c.name}`, badge: "Composed",
             icon: <BarChart3 className="h-3.5 w-3.5" />, group: "Categorical",
-            render: (h) => (
+            render: (h, fs) => (
               <ResponsiveContainer width="100%" height={h}>
                 <ComposedChart data={aData} margin={{ left: 0, right: 12, top: 8, bottom: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="name" tick={{ ...axisTick, fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
-                  <YAxis tick={axisTick} />
+                  <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
+                  <YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="total" fill={color} radius={[4, 4, 0, 0]} />
                   <Line type="monotone" dataKey="avg" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
@@ -474,7 +479,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
       out.push({
         id: `bool-${c.name}`, title: `${c.name} — true vs false`, badge: "Gauge",
         icon: <Gauge className="h-3.5 w-3.5" />, group: "Categorical",
-        render: (h) => (
+        render: (h, fs) => (
           <div className="flex flex-col items-center justify-center" style={{ minHeight: h }}>
             <div className="text-5xl font-semibold" style={{ color: PALETTE[ci % PALETTE.length] }}>
               {((t / total) * 100).toFixed(1)}%
@@ -513,7 +518,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
           title: `${nc.name} over ${dc.name}`,
           badge: type === "area" ? "Area" : type === "bar" ? "Time bars" : "Time line",
           icon: <TrendingUp className="h-3.5 w-3.5" />, group: "Time",
-          render: (h) => (
+          render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               {type === "area" ? (
                 <AreaChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
@@ -521,21 +526,21 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                     <stop offset="0%" stopColor={color} stopOpacity={0.45} /><stop offset="100%" stopColor={color} stopOpacity={0} />
                   </linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="date" tick={{ ...axisTick, fontSize: 10 }} /><YAxis tick={axisTick} />
+                  <XAxis dataKey="date" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#ts-${dc.name}-${nc.name})`} />
                 </AreaChart>
               ) : type === "bar" ? (
                 <BarChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="date" tick={{ ...axisTick, fontSize: 10 }} /><YAxis tick={axisTick} />
+                  <XAxis dataKey="date" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
                 </BarChart>
               ) : (
                 <LineChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="date" tick={{ ...axisTick, fontSize: 10 }} /><YAxis tick={axisTick} />
+                  <XAxis dataKey="date" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
                 </LineChart>
@@ -551,7 +556,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
       out.push({
         id: `dow-${dc.name}`, title: `${dc.name} — weekday pattern`, badge: "Radar",
         icon: <Calendar className="h-3.5 w-3.5" />, group: "Time",
-        render: (h) => (
+        render: (h, fs) => (
           <ResponsiveContainer width="100%" height={h}>
             <RadarChart data={dow} cx="50%" cy="50%" outerRadius="80%">
               <PolarGrid stroke="#e5e7eb" />
@@ -579,12 +584,12 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
           title: `${topNum[a].name} vs ${topNum[b].name}`,
           badge: `r = ${r.toFixed(2)}`,
           icon: <GitCompare className="h-3.5 w-3.5" />, group: "Relationships",
-          render: (h) => (
+          render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               <ScatterChart margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis type="number" dataKey="x" tick={axisTick} name={topNum[a].name} />
-                <YAxis type="number" dataKey="y" tick={axisTick} name={topNum[b].name} />
+                <XAxis type="number" dataKey="x" tick={{ ...axisTick, fontSize: fs }} name={topNum[a].name} />
+                <YAxis type="number" dataKey="y" tick={{ ...axisTick, fontSize: fs }} name={topNum[b].name} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: "3 3" }} />
                 <Scatter data={pts} fill="#06b6d4" />
               </ScatterChart>
@@ -604,7 +609,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
       out.push({
         id: "heatmap", title: "Correlation matrix", badge: "Heatmap",
         icon: <Network className="h-3.5 w-3.5" />, group: "Relationships", span: 2,
-        render: (h) => (
+        render: (h, fs) => (
           <div className="overflow-x-auto" style={{ minHeight: h }}>
             <div className="inline-grid gap-px bg-border" style={{ gridTemplateColumns: `auto repeat(${topNum.length}, minmax(80px,1fr))` }}>
               <div className="bg-card p-2 text-xs" />
@@ -645,12 +650,12 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
       out.push({
         id: `stack-${a.name}-${b.name}`, title: `${a.name} × ${b.name}`, badge: "Stacked bars",
         icon: <BarChart3 className="h-3.5 w-3.5" />, group: "Relationships",
-        render: (h) => (
+        render: (h, fs) => (
           <ResponsiveContainer width="100%" height={h}>
             <BarChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-              <XAxis dataKey="name" tick={{ ...axisTick, fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
-              <YAxis tick={axisTick} />
+              <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
+              <YAxis tick={{ ...axisTick, fontSize: fs }} />
               <Tooltip contentStyle={tooltipStyle} />
               {bArr.map((k, i) => (<Bar key={k} dataKey={k} stackId="s" fill={PALETTE[i % PALETTE.length]} />))}
             </BarChart>
@@ -744,10 +749,18 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
       pdf.addPage();
       let cursorY = margin;
 
+      // Quality preset → html2canvas scale + image encoding
+      const preset =
+        exportFormat === "png"
+          ? { scale: 3, mime: "image/png" as const, quality: 1, fmt: "PNG" as const }
+          : exportFormat === "jpeg-high"
+          ? { scale: 2.75, mime: "image/jpeg" as const, quality: 0.95, fmt: "JPEG" as const }
+          : { scale: 2, mime: "image/jpeg" as const, quality: 0.85, fmt: "JPEG" as const };
+
       for (const { spec, el } of cards) {
         const canvas = await html2canvas(el, {
           backgroundColor: "#ffffff",
-          scale: Math.min(2.5, Math.max(2, window.devicePixelRatio * 1.5)),
+          scale: preset.scale,
           useCORS: true,
           logging: false,
           windowWidth: el.scrollWidth,
@@ -788,16 +801,16 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         pdf.text(spec.badge, pageW - margin, cursorY + 14, { align: "right" });
 
         // Image
-        const img = canvas.toDataURL("image/jpeg", 0.92);
+        const img = canvas.toDataURL(preset.mime, preset.quality);
         pdf.addImage(
           img,
-          "JPEG",
+          preset.fmt,
           margin + (innerW - drawImgW) / 2,
           cursorY + headerH,
           drawImgW,
           drawImgH,
           undefined,
-          "FAST",
+          preset.fmt === "PNG" ? "SLOW" : "FAST",
         );
 
         cursorY += finalBlockH;
@@ -859,6 +872,18 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-2 py-1 font-medium text-[var(--primary)]">
               <Sparkles className="h-3 w-3" /> {charts.length} visualizations
             </span>
+            <select
+              data-export-ignore
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value as typeof exportFormat)}
+              disabled={exporting}
+              title="Chart rendering quality in the exported PDF"
+              className="rounded-full border border-border bg-background px-2.5 py-1.5 text-[11px] text-foreground transition disabled:opacity-60"
+            >
+              <option value="jpeg-standard">JPEG · Standard</option>
+              <option value="jpeg-high">JPEG · High</option>
+              <option value="png">PNG · Lossless</option>
+            </select>
             <button
               data-export-ignore
               onClick={handleExport}
