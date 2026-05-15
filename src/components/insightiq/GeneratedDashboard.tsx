@@ -135,6 +135,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
   const [page, setPage] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [exportMode, setExportMode] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"jpeg-standard" | "jpeg-high" | "png">("jpeg-high");
   const ref = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const PAGE_SIZE = 8;
@@ -748,10 +749,18 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
       pdf.addPage();
       let cursorY = margin;
 
+      // Quality preset → html2canvas scale + image encoding
+      const preset =
+        exportFormat === "png"
+          ? { scale: 3, mime: "image/png" as const, quality: 1, fmt: "PNG" as const }
+          : exportFormat === "jpeg-high"
+          ? { scale: 2.75, mime: "image/jpeg" as const, quality: 0.95, fmt: "JPEG" as const }
+          : { scale: 2, mime: "image/jpeg" as const, quality: 0.85, fmt: "JPEG" as const };
+
       for (const { spec, el } of cards) {
         const canvas = await html2canvas(el, {
           backgroundColor: "#ffffff",
-          scale: Math.min(2.5, Math.max(2, window.devicePixelRatio * 1.5)),
+          scale: preset.scale,
           useCORS: true,
           logging: false,
           windowWidth: el.scrollWidth,
@@ -792,16 +801,16 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
         pdf.text(spec.badge, pageW - margin, cursorY + 14, { align: "right" });
 
         // Image
-        const img = canvas.toDataURL("image/jpeg", 0.92);
+        const img = canvas.toDataURL(preset.mime, preset.quality);
         pdf.addImage(
           img,
-          "JPEG",
+          preset.fmt,
           margin + (innerW - drawImgW) / 2,
           cursorY + headerH,
           drawImgW,
           drawImgH,
           undefined,
-          "FAST",
+          preset.fmt === "PNG" ? "SLOW" : "FAST",
         );
 
         cursorY += finalBlockH;
