@@ -872,6 +872,18 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-2 py-1 font-medium text-[var(--primary)]">
               <Sparkles className="h-3 w-3" /> {charts.length} visualizations
             </span>
+            <select
+              data-export-ignore
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value as typeof exportFormat)}
+              disabled={exporting}
+              title="Chart rendering quality in the exported PDF"
+              className="rounded-full border border-border bg-background px-2.5 py-1.5 text-[11px] text-foreground transition disabled:opacity-60"
+            >
+              <option value="jpeg-standard">JPEG · Standard</option>
+              <option value="jpeg-high">JPEG · High</option>
+              <option value="png">PNG · Lossless</option>
+            </select>
             <button
               data-export-ignore
               onClick={handleExport}
