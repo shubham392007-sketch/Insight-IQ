@@ -10,7 +10,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-28">
+    <section id="solutions" className="py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">From file to dashboard in four steps.</h2>
