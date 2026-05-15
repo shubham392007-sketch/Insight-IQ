@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Logo } from "./Logo";
 
-const links = ["Product", "Features", "Solutions", "Pricing", "Docs"];
+const links: { label: string; href: string }[] = [
+  { label: "Product", href: "#product" },
+  { label: "Features", href: "#features" },
+  { label: "Solutions", href: "#solutions" },
+  { label: "Docs", href: "#docs" },
+  { label: "Contact", href: "#contact" },
+];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -29,11 +35,11 @@ export function Navbar() {
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
             <a
-              key={l}
-              href={`#${l.toLowerCase()}`}
+              key={l.label}
+              href={l.href}
               className="group relative px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {l}
+              {l.label}
               <span className="absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100" />
             </a>
           ))}
