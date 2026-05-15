@@ -18,7 +18,7 @@ const snippets = [
 
 export function Pipeline() {
   return (
-    <section className="relative overflow-hidden border-y border-border bg-[var(--surface-soft)] py-28">
+    <section id="product" className="relative overflow-hidden border-y border-border bg-[var(--surface-soft)] py-28">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-40" />
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
