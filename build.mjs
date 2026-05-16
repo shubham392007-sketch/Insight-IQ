@@ -5,22 +5,34 @@ import path from 'path';
 console.log('Running vite build...');
 execSync('npx vite build', { stdio: 'inherit' });
 
-console.log('Restructuring dist folder for Vercel...');
+console.log('Restructuring dist folder for Vercel Build Output API...');
 const clientDir = path.join('dist', 'client');
-const serverDir = path.join('dist', 'server');
+const vercelOutputDir = path.join('.vercel', 'output');
+const vercelStaticDir = path.join(vercelOutputDir, 'static');
 
 if (fs.existsSync(clientDir)) {
+  fs.mkdirSync(vercelStaticDir, { recursive: true });
+  
+  // Copy all files from dist/client to .vercel/output/static
   const files = fs.readdirSync(clientDir);
   for (const file of files) {
     const src = path.join(clientDir, file);
-    const dest = path.join('dist', file);
-    fs.renameSync(src, dest);
+    const dest = path.join(vercelStaticDir, file);
+    fs.cpSync(src, dest, { recursive: true });
   }
-  fs.rmSync(clientDir, { recursive: true, force: true });
   
-  if (fs.existsSync(serverDir)) {
-    fs.rmSync(serverDir, { recursive: true, force: true });
-  }
-}
+  // Write Vercel routing configuration
+  const vercelConfig = {
+    version: 3,
+    routes: [
+      { handle: "filesystem" },
+      { src: "/(.*)", dest: "/index.html" }
+    ]
+  };
+  fs.writeFileSync(
+    path.join(vercelOutputDir, 'config.json'),
+    JSON.stringify(vercelConfig, null, 2)
+  );
 
-console.log('Build complete! Ready for Vercel deployment.');
+  console.log('Successfully generated .vercel/output for Vercel deployment!');
+}
