@@ -162,10 +162,21 @@ function RootComponent() {
 
     const key = `insightiq-scroll:${window.location.pathname}${window.location.search}${window.location.hash}`;
     const storedPosition = sessionStorage.getItem(key);
-    if (storedPosition === null) return;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const targetId = window.location.hash ? decodeURIComponent(window.location.hash.slice(1)) : "";
 
     const restoreScroll = () => {
-      window.scrollTo({ top: Number(storedPosition) || 0, left: 0, behavior: "auto" });
+      if (storedPosition !== null) {
+        window.scrollTo({ top: Number(storedPosition) || 0, left: 0, behavior: "auto" });
+        return;
+      }
+
+      if (targetId) {
+        document.getElementById(targetId)?.scrollIntoView({
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+          block: "start",
+        });
+      }
     };
 
     const frame = window.requestAnimationFrame(restoreScroll);
