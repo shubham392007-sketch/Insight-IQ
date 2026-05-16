@@ -4,9 +4,11 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 
@@ -128,6 +130,52 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("scrollRestoration" in window.history)) return;
+    window.history.scrollRestoration = "manual";
+
+    return () => {
+      window.history.scrollRestoration = "auto";
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const key = `insightiq-scroll:${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const saveScroll = () => sessionStorage.setItem(key, String(window.scrollY));
+
+    window.addEventListener("pagehide", saveScroll);
+    window.addEventListener("beforeunload", saveScroll);
+
+    return () => {
+      saveScroll();
+      window.removeEventListener("pagehide", saveScroll);
+      window.removeEventListener("beforeunload", saveScroll);
+    };
+  }, [location.href]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const key = `insightiq-scroll:${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const storedPosition = sessionStorage.getItem(key);
+    if (storedPosition === null) return;
+
+    const restoreScroll = () => {
+      window.scrollTo({ top: Number(storedPosition) || 0, left: 0, behavior: "auto" });
+    };
+
+    const frame = window.requestAnimationFrame(restoreScroll);
+    const timer = window.setTimeout(restoreScroll, 150);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [location.href]);
 
   return (
     <QueryClientProvider client={queryClient}>
