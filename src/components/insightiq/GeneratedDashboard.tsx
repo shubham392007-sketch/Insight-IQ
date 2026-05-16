@@ -140,6 +140,15 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const PAGE_SIZE = 8;
 
+  function goToPage(next: number) {
+    setPage(next);
+    // Scroll the dashboard back to the top so the first chart of the new page
+    // is immediately visible instead of mid-grid.
+    requestAnimationFrame(() => {
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   const charts = useMemo<ChartSpec[]>(() => {
     const cols = parsed.cols;
     const numericCols = cols.filter((c) => c.type === "number");
@@ -913,7 +922,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
             const active = filter === g;
             return (
               <button key={g}
-                onClick={() => { setFilter(g); setPage(0); }}
+                onClick={() => { setFilter(g); goToPage(0); }}
                 className={`rounded-full px-3 py-1 transition ${active ? "bg-foreground text-background" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
                 {g} <span className="opacity-60">{count}</span>
               </button>
@@ -942,7 +951,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setPage(Math.max(0, safePage - 1))}
+                onClick={() => goToPage(Math.max(0, safePage - 1))}
                 disabled={safePage === 0}
                 className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs disabled:opacity-40"
               >
@@ -952,13 +961,13 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                 {Array.from({ length: totalPages }).map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => setPage(i)}
+                    onClick={() => goToPage(i)}
                     className={`h-7 w-7 rounded-full text-xs transition ${i === safePage ? "bg-foreground text-background" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
                   >{i + 1}</button>
                 ))}
               </div>
               <button
-                onClick={() => setPage(Math.min(totalPages - 1, safePage + 1))}
+                onClick={() => goToPage(Math.min(totalPages - 1, safePage + 1))}
                 disabled={safePage >= totalPages - 1}
                 className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs disabled:opacity-40"
               >
