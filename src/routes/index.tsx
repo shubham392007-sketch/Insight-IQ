@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Navbar } from "@/components/insightiq/Navbar";
 import { Hero } from "@/components/insightiq/Hero";
 import { TrustBar } from "@/components/insightiq/TrustBar";
@@ -16,6 +17,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <main className="relative min-h-screen bg-background text-foreground">
       <Navbar />
