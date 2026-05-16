@@ -191,7 +191,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
               <Pie data={data} dataKey="value" nameKey="name" innerRadius="40%" outerRadius="75%" paddingAngle={2} label>
                 {data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
               </Pie>
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
             </PieChart>
           </ResponsiveContainer>
         );
@@ -209,7 +209,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
               <XAxis type="number" domain={[0, 100]} tick={{ ...axisTick, fontSize: fs }} />
               <YAxis type="category" dataKey="name" width={90} tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
               <Bar dataKey="complete" fill="#10b981" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -228,7 +228,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
               <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
               <YAxis tick={{ ...axisTick, fontSize: fs }} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
               <Bar dataKey="unique" radius={[4, 4, 0, 0]}>
                 {cols.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
               </Bar>
@@ -262,7 +262,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="range" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} />
                   <YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Bar dataKey="count" fill={color} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -284,7 +284,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                   </linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="i" tick={{ ...axisTick, fontSize: fs }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Area type="monotone" dataKey="cum" stroke={color} strokeWidth={2} fill={`url(#g-${c.name})`} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -318,7 +318,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                 <LineChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="i" tick={{ ...axisTick, fontSize: fs }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -341,7 +341,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                   </linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="x" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Area type="basis" dataKey="d" stroke={color} strokeWidth={2} fill={`url(#d-${c.name})`} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -371,7 +371,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
                 <YAxis tick={{ ...axisTick, fontSize: fs }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                   {data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
                 </Bar>
@@ -389,7 +389,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                 <Pie data={data} dataKey="value" nameKey="name" innerRadius="45%" outerRadius="80%" paddingAngle={2} label>
                   {data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
               </PieChart>
             </ResponsiveContainer>
           ),
@@ -414,7 +414,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
               <RadialBarChart innerRadius="20%" outerRadius="100%"
                 data={data.slice(0, 6).map((d, i) => ({ ...d, fill: PALETTE[i % PALETTE.length] }))}>
                 <RadialBar background dataKey="value" />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
               </RadialBarChart>
             </ResponsiveContainer>
           ),
@@ -426,7 +426,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
           render: (h, fs) => (
             <ResponsiveContainer width="100%" height={h}>
               <FunnelChart>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                 <Funnel dataKey="value" data={data.slice(0, 6).map((d, i) => ({ ...d, fill: PALETTE[i % PALETTE.length] }))} isAnimationActive>
                   <LabelList position="right" fill="#374151" stroke="none" dataKey="name" style={{ fontSize: 11 }} />
                 </Funnel>
@@ -456,7 +456,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
                   <YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Bar dataKey="total" fill={color} radius={[4, 4, 0, 0]} />
                   <Line type="monotone" dataKey="avg" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
                 </ComposedChart>
@@ -527,21 +527,21 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                   </linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="date" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#ts-${dc.name}-${nc.name})`} />
                 </AreaChart>
               ) : type === "bar" ? (
                 <BarChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="date" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
                 </BarChart>
               ) : (
                 <LineChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="date" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} /><YAxis tick={{ ...axisTick, fontSize: fs }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
                   <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
                 </LineChart>
               )}
@@ -563,7 +563,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
               <PolarAngleAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} />
               <PolarRadiusAxis tick={{ fontSize: 10, fill: "#9ca3af" }} />
               <Radar dataKey="count" stroke="#6366f1" fill="#6366f1" fillOpacity={0.4} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
             </RadarChart>
           </ResponsiveContainer>
         ),
@@ -590,7 +590,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis type="number" dataKey="x" tick={{ ...axisTick, fontSize: fs }} name={topNum[a].name} />
                 <YAxis type="number" dataKey="y" tick={{ ...axisTick, fontSize: fs }} name={topNum[b].name} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: "3 3" }} />
+                <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} cursor={{ strokeDasharray: "3 3" }} />
                 <Scatter data={pts} fill="#06b6d4" />
               </ScatterChart>
             </ResponsiveContainer>
@@ -656,7 +656,7 @@ export function GeneratedDashboard({ parsed, allRows }: Props) {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
               <XAxis dataKey="name" tick={{ ...axisTick, fontSize: Math.max(9, fs - 1) }} interval={0} angle={-25} textAnchor="end" height={60} />
               <YAxis tick={{ ...axisTick, fontSize: fs }} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={{ ...tooltipStyle, fontSize: Math.max(10, fs) }} wrapperStyle={{ fontSize: Math.max(10, fs), zIndex: 50 }} itemStyle={{ fontSize: Math.max(10, fs) }} labelStyle={{ fontSize: Math.max(10, fs) }} />
               {bArr.map((k, i) => (<Bar key={k} dataKey={k} stackId="s" fill={PALETTE[i % PALETTE.length]} />))}
             </BarChart>
           </ResponsiveContainer>
