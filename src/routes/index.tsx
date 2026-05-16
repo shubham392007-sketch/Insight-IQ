@@ -19,10 +19,29 @@ export const Route = createFileRoute("/")({
 function Index() {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.location.hash) {
-      history.replaceState(null, "", window.location.pathname + window.location.search);
-    }
-    window.scrollTo(0, 0);
+
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+
+    if (window.location.hash || navigation?.type === "back_forward") return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const scrollToTop = () => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      });
+    };
+
+    const frame = window.requestAnimationFrame(scrollToTop);
+    const timers = [120, 360, 720].map((delay) => window.setTimeout(scrollToTop, delay));
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      timers.forEach(window.clearTimeout);
+    };
   }, []);
 
   return (
